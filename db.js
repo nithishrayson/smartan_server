@@ -1,32 +1,26 @@
-// db.js
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const path = require('path');
 
 const dbPath = path.join(__dirname, 'images.db');
-const db = new sqlite3.Database(dbPath);
+const db = new Database(dbPath);
 
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS images (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      filename TEXT NOT NULL,
-      url TEXT NOT NULL,
-      uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-});
+db.exec(`
+  CREATE TABLE IF NOT EXISTS images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename TEXT NOT NULL,
+    url TEXT NOT NULL,
+    uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
 function insertImage(filename, url) {
-  return new Promise((resolve, reject) => {
-    db.run(
-      `INSERT INTO images (filename, url) VALUES (?, ?)`,
-      [filename, url],
-      function (err) {
-        if (err) return reject(err);
-        resolve({ id: this.lastID });
-      }
-    );
-  });
+  try {
+    const stmt = db.prepare(`INSERT INTO images (filename, url) VALUES (?, ?)`);
+    const info = stmt.run(filename, url);
+    return Promise.resolve({ id: info.lastInsertRowid });
+  } catch (err) {
+    return Promise.reject(err);
+  }
 }
 
 module.exports = { insertImage };

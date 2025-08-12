@@ -7,16 +7,13 @@ const { insertImage } = require('./db');
 const app = express();
 const PORT = 3000;
 
-// Ensure uploads folder exists
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
-// Serve static files from uploads/
 app.use('/uploads', express.static(uploadDir));
 
-// Configure Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -40,7 +37,7 @@ app.post('/upload', upload.any(), async (req, res) => {
     for (const f of req.files) {
       const filename = path.basename(f.path);
       const url = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
-      await insertImage(filename, url); // Save to SQLite
+      await insertImage(filename, url); 
       fileUrls.push(url);
     }
 
@@ -54,7 +51,6 @@ app.post('/upload', upload.any(), async (req, res) => {
   }
 });
 
-// Error handling for Multer
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: err.message });
@@ -62,7 +58,6 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
