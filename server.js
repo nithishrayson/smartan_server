@@ -2,26 +2,25 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cors = require('cors');
+const morgan = require('morgan');
 const { insertImage } = require('./db');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
+app.use(cors());
+app.use(morgan('dev'));
 app.use('/uploads', express.static(uploadDir));
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
 
 const upload = multer({ storage });
@@ -37,7 +36,7 @@ app.post('/upload', upload.any(), async (req, res) => {
     for (const f of req.files) {
       const filename = path.basename(f.path);
       const url = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
-      await insertImage(filename, url); 
+      await insertImage(filename, url);
       fileUrls.push(url);
     }
 
